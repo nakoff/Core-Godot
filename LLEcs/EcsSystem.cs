@@ -17,6 +17,11 @@ public interface IEntitiesUpdate : IEcsSystem
     void EntitiesUpdate(Dictionary<ulong, EcsEntity> entities, float deltaTime);
 }
 
+public interface IEntitiesPhysicsUpdate : IEcsSystem
+{
+    void EntitiesPhysicsUpdate(Dictionary<ulong, EcsEntity> entities, float deltaTime);
+}
+
 public interface IEntityRemoved : IEcsSystem
 {
     void EntitiesRemoved(List<int> ids);

@@ -1,9 +1,9 @@
 using System.Collections.Generic;
-using System;
 using Godot;
 
 namespace Core.LLEcs;
 
+[GlobalClass]
 public partial class EcsEntity : Node
 {
     public ulong Id => GetInstanceId();

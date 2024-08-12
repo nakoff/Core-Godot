@@ -14,6 +14,7 @@ public partial class EcsWorld : Node
     private Dictionary<int, IEntityAdded> _initableSystems = new();
     private Dictionary<int, IEntityRemoved> _removableSystems = new();
     private Dictionary<int, IEntitiesUpdate> _updatableSystems = new();
+    private Dictionary<int, IEntitiesPhysicsUpdate> _physicsUpdatableSystems = new();
 
     private List<EcsEntity> _entities = new();
     private List<EcsFilter> _filters = new();
@@ -67,10 +68,26 @@ public partial class EcsWorld : Node
             // update
             if (system is IEntitiesUpdate updateSystem)
                 updateSystem.EntitiesUpdate(filteredEntities, dt);
+
+            // physics update
+            if (system is IEntitiesPhysicsUpdate physicsUpdateSystem)
+                physicsUpdateSystem.EntitiesPhysicsUpdate(filteredEntities, dt);
         }
 
         _addedEntities.Clear();
         _removedEntities.Clear();
+    }
+
+    public void PhysicsTick(float dt)
+    {
+        foreach (var system in _allSystems)
+        {
+            var filteredEntities = _filteredEntities[system.Filter.Id];
+
+            // physics update
+            if (system is IEntitiesPhysicsUpdate physicsUpdateSystem)
+                physicsUpdateSystem.EntitiesPhysicsUpdate(filteredEntities, dt);
+        }
     }
 
     public EcsEntity CreateEntity(string name, Node parent = null)
@@ -126,6 +143,7 @@ public partial class EcsWorld : Node
         _allSystems.Add(ecsSystem);
         if (system is IEntityAdded entityAdded) _initableSystems.Add(ecsSystem.Id, entityAdded);
         if (system is IEntitiesUpdate entitiesUpdate) _updatableSystems.Add(ecsSystem.Id, entitiesUpdate);
+        if (system is IEntitiesPhysicsUpdate entitiesPhysicsUpdate) _physicsUpdatableSystems.Add(ecsSystem.Id, entitiesPhysicsUpdate);
         if (system is IEntityRemoved entitiesRemoved) _removableSystems.Add(ecsSystem.Id, entitiesRemoved);
     }
 
@@ -133,6 +151,7 @@ public partial class EcsWorld : Node
     {
         _allSystems.Clear();
         _updatableSystems.Clear();
+        _physicsUpdatableSystems.Clear();
         _initableSystems.Clear();
         _removableSystems.Clear();
     }
