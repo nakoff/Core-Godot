@@ -10,16 +10,20 @@ public partial class EcsEntity : Node
 
 	private Dictionary<System.Type, Node> _components = new();
 
-	public override void _Ready() {
+	public override void _Ready()
+	{
 		base._Ready();
 
 		foreach (var item in GetChildren())
-			_components.Add(item.GetType(), item);
+		{
+			if (item is EcsComponent component)
+				_components.Add(item.GetType(), component);
+		}
 
 		EcsWorld.Instance.AddEntity(this);
 	}
 
-	public T GetComponent<T>() where T: Node
+	public T GetComponent<T>() where T : Node
 	{
 		if (_components.ContainsKey(typeof(T)))
 			return (T)_components[typeof(T)];
@@ -33,7 +37,7 @@ public partial class EcsEntity : Node
 		return default;
 	}
 
-	public T AddComponent<T>() where T: Node, new()
+	public T AddComponent<T>() where T : Node, new()
 	{
 		if (_components.ContainsKey(typeof(T)))
 			RemoveComponent<T>();
@@ -44,7 +48,7 @@ public partial class EcsEntity : Node
 		return c;
 	}
 
-	public void RemoveComponent<T>() where T: Node
+	public void RemoveComponent<T>() where T : Node
 	{
 		var type = typeof(T);
 		if (!_components.ContainsKey(type))
