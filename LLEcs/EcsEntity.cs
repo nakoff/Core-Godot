@@ -23,23 +23,25 @@ public partial class EcsEntity : Node
 		EcsWorld.Instance.AddEntity(this);
 	}
 
-	public T GetComponent<T>() where T : Node
+	public bool HasComponent<T>() where T : Node => _components.ContainsKey(typeof(T));
+
+	public T? GetComponent<T>() where T : Node
 	{
-		if (_components.ContainsKey(typeof(T)))
+		if (HasComponent<T>())
 			return (T)_components[typeof(T)];
-		return default;
+		return null;
 	}
 
-	public Node GetComponent(System.Type type)
+	public Node? GetComponent(System.Type type)
 	{
 		if (_components.ContainsKey(type))
 			return _components[type];
-		return default;
+		return null;
 	}
 
 	public T AddComponent<T>() where T : Node, new()
 	{
-		if (_components.ContainsKey(typeof(T)))
+		if (HasComponent<T>())
 			RemoveComponent<T>();
 
 		var c = new T();
@@ -50,9 +52,10 @@ public partial class EcsEntity : Node
 
 	public void RemoveComponent<T>() where T : Node
 	{
-		var type = typeof(T);
-		if (!_components.ContainsKey(type))
+		if (!HasComponent<T>())
 			return;
+
+		var type = typeof(T);
 		_components[type].QueueFree();
 		_components.Remove(type);
 	}
