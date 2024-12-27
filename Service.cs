@@ -13,16 +13,16 @@ public interface IUpdate
     void Update(float dt);
 }
 
-public class ServiceBase
+public class Service
 {
-    public static ServiceBase Instance => _instance ??= new ServiceBase();
-    private static ServiceBase _instance;
+    public static Service Instance => _instance ??= new Service();
+    private static Service? _instance;
 
-    private List<ServiceBase> _services = new();
+    private List<Service> _services = new();
     private List<IInit> _inits = new();
     private List<IUpdate> _updates = new();
 
-    public static void Register(ServiceBase service)
+    public static void Register(Service service)
     {
         Instance._services.Add(service);
 
@@ -33,7 +33,7 @@ public class ServiceBase
             Instance._updates.Add(update);
     }
 
-    public static T GetService<T>() where T : ServiceBase
+    public static T? GetService<T>() where T : Service
     {
         return Instance._services.Find(x => x is T) as T;
     }

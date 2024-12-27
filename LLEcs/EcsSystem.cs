@@ -30,13 +30,11 @@ public interface IEntityRemoved : IEcsSystem
 public abstract class EcsSystem
 {
     public int Id { get; }
-    public abstract EcsFilter Filter { get; }
+    public EcsFilter Filter { get; }
 
-    protected EcsWorld world;
-
-    public EcsSystem(EcsWorld world)
+    public EcsSystem(EcsFilter filter)
     {
-        this.world = world;
+        Filter = filter;
         Id = GetHashCode();
     }
 }

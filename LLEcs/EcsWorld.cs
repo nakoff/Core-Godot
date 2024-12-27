@@ -30,7 +30,8 @@ public partial class EcsWorld : Node
             QueueFree();
     }
 
-    public void Init() {
+    public void Init()
+    {
         if (Instance == null)
         {
             GD.PrintErr("EcsWorld is null");

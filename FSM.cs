@@ -8,11 +8,11 @@ namespace Core.Fsm;
 public class FsmState
 {
     public string Name { get; }
-    public Func<bool> CanEnter { get; set; }
-    public Func<bool> CanExit { get; set; }
-    public Action<float> OnUpdate { get; set; }
-    public Action OnEntered { get; set; }
-    public Action OnExited { get; set; }
+    public Func<bool>? CanEnter { get; set; }
+    public Func<bool>? CanExit { get; set; }
+    public Action<float>? OnUpdate { get; set; }
+    public Action? OnEntered { get; set; }
+    public Action? OnExited { get; set; }
 
     public FsmState(string name)
     {
@@ -27,11 +27,11 @@ public class AnonimouseState
     public AnonimouseState
     (
         string Name,
-        Action onEntered = null,
-        Action onExited = null,
-        Action<float> onUpdate = null,
-        Func<bool> canEnter = null,
-        Func<bool> canExit = null
+        Action? onEntered = null,
+        Action? onExited = null,
+        Action<float>? onUpdate = null,
+        Func<bool>? canEnter = null,
+        Func<bool>? canExit = null
     )
     {
         var state = new FsmState(Name);
@@ -47,7 +47,7 @@ public class AnonimouseState
 
 public class Fsm
 {
-    public enum Mode 
+    public enum Mode
     {
         AUTO,
         MANUAL,
@@ -57,24 +57,31 @@ public class Fsm
     public Mode RuleMode { get; set; } = Mode.COMBINE;
 
     private HashSet<FsmState> _states = new();
-    protected FsmState curState;
-    protected FsmState prevState;
+    protected FsmState? curState;
+    protected FsmState? prevState;
 
     public Fsm(List<AnonimouseState> states)
     {
         foreach (var state in states)
             AddState(state.State);
-        
-        ChangeState(_states.FirstOrDefault());
+
+
+        var firstState = _states.FirstOrDefault();
+        if (firstState == null)
+            return;
+        ChangeState(firstState);
     }
 
-    public Fsm(ICollection<FsmState> states = null)
+    public Fsm(ICollection<FsmState>? states = null)
     {
         if (states == null)
             return;
-        
+
         _states = states.ToHashSet<FsmState>();
-        ChangeState(_states.FirstOrDefault());
+        var firstState = _states.FirstOrDefault();
+        if (firstState == null)
+            return;
+        ChangeState(firstState);
     }
 
     public void AddState(FsmState state)
@@ -98,14 +105,14 @@ public class Fsm
         if (RuleMode == Mode.MANUAL)
             return;
 
-        if (curState != null && curState.CanEnter != null && !curState.CanExit())
+        if (curState != null && curState.CanEnter != null && (curState?.CanExit != null && !curState.CanExit()))
             return;
-        
+
         foreach (var state in _states)
         {
             if (state.CanEnter == null || !state.CanEnter())
                 continue;
-            
+
             ChangeState(state);
             break;
         }
@@ -115,7 +122,7 @@ public class Fsm
     {
         if (RuleMode == Mode.AUTO)
             return;
-        
+
         var newState = _states.FirstOrDefault(s => s.Name == name);
         if (newState == null)
         {
@@ -131,7 +138,7 @@ public class Fsm
             return;
         if (newState == null || curState == newState)
             return;
-        
+
         curState?.OnExited?.Invoke();
         newState.OnEntered?.Invoke();
         prevState = curState;
