@@ -5,11 +5,11 @@ namespace Core.LLEcs;
 
 public partial class EcsWorld : Node
 {
-    public static EcsWorld Instance => _instance;
+    public static EcsWorld? Instance => _instance;
 
     [Export] private Godot.Collections.Array<EcsEntity> entities = new();
 
-    private static EcsWorld _instance;
+    private static EcsWorld? _instance;
     private List<EcsSystem> _allSystems = new();
     private Dictionary<int, IEntityAdded> _initableSystems = new();
     private Dictionary<int, IEntityRemoved> _removableSystems = new();
@@ -30,7 +30,7 @@ public partial class EcsWorld : Node
             QueueFree();
     }
 
-    public void Init()
+    public void Initialize()
     {
         if (Instance == null)
         {
@@ -91,7 +91,7 @@ public partial class EcsWorld : Node
         }
     }
 
-    public EcsEntity CreateEntity(string name, Node parent = null)
+    public EcsEntity CreateEntity(string name, Node? parent = null)
     {
         var p = parent != null ? parent : GetTree().Root.GetChild(0);
         var entity = new EcsEntity();

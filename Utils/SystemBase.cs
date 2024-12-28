@@ -1,11 +1,23 @@
+using System.Collections.Generic;
 using Core.DependencyInjection;
 
 namespace Core.LLEcs;
 
 public class SystemBase : EcsSystem
 {
-    public SystemBase(DIContainer container, EcsFilter filter) : base(filter)
+    protected static DIContainer? Container { get; private set; }
+    private static List<EcsSystem> _systems = new();
+
+    public static void Initialize(DIContainer container)
     {
-        container.InjectDependencies(this);
+        Container = container;
+
+        foreach (var system in _systems)
+            container.InjectDependencies(system);
+    }
+
+    public SystemBase(EcsFilter filter) : base(filter)
+    {
+        _systems.Add(this);
     }
 }

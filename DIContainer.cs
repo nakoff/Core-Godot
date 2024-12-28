@@ -17,6 +17,8 @@ public class DIContainer
 		_registrations[typeof(TService)] = () => implementationFactory();
 	}
 
+	public void Register(Type serviceType, Func<object> implementationFactory) => _registrations[serviceType] = implementationFactory;
+
 	private TService Resolve<TService>() where TService : class
 	{
 		return (TService)Resolve(typeof(TService));
