@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
-using Core.DependencyInjection;
+using LooksLike.DependencyInjection;
 using Godot;
 
-namespace Core.Services;
+namespace LooksLike.Services;
 
 public class ServiceBase : Service
 {

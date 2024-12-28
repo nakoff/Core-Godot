@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 
-namespace Core.DependencyInjection;
+namespace LooksLike.DependencyInjection;
 
 [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
 public class InjectAttribute : Attribute { }
@@ -11,30 +11,11 @@ public class DIContainer
 {
 	private readonly Dictionary<Type, Func<object>> _registrations = new();
 
-	public void Register<TService>(Func<TService> implementationFactory)
-		where TService : class
-	{
-		_registrations[typeof(TService)] = () => implementationFactory();
-	}
+	public void Register<TService>(Func<TService> implementationFactory) where TService : class
+		=> _registrations[typeof(TService)] = () => implementationFactory();
 
-	public void Register(Type serviceType, Func<object> implementationFactory) => _registrations[serviceType] = implementationFactory;
-
-	private TService Resolve<TService>() where TService : class
-	{
-		return (TService)Resolve(typeof(TService));
-	}
-
-	private object Resolve(Type serviceType)
-	{
-		if (_registrations.TryGetValue(serviceType, out var factory))
-		{
-			var instance = factory();
-			InjectDependencies(instance);
-			return instance;
-		}
-
-		throw new InvalidOperationException($"Service of type {serviceType} is not registered.");
-	}
+	public void Register(Type serviceType, Func<object> implementationFactory)
+		=> _registrations[serviceType] = implementationFactory;
 
 	public void InjectDependencies(object target)
 	{
@@ -50,13 +31,9 @@ public class DIContainer
 
 			Type? memberType = null;
 			if (member is PropertyInfo property)
-			{
 				memberType = property.PropertyType;
-			}
 			else if (member is FieldInfo fieldInfo)
-			{
 				memberType = fieldInfo.FieldType;
-			}
 
 			if (memberType == null)
 				throw new InvalidOperationException($"Unsupported member type on {member.Name}.");
@@ -64,17 +41,26 @@ public class DIContainer
 			var dependency = Resolve(memberType);
 
 			if (member is PropertyInfo propertyInfo && propertyInfo.CanWrite)
-			{
 				propertyInfo.SetValue(target, dependency);
-			}
 			else if (member is FieldInfo fieldMember)
-			{
 				fieldMember.SetValue(target, dependency);
-			}
 			else
-			{
 				throw new InvalidOperationException($"Cannot inject dependency into {member.Name}.");
-			}
 		}
+	}
+
+	private TService Resolve<TService>() where TService : class
+		=> (TService)Resolve(typeof(TService));
+
+	private object Resolve(Type serviceType)
+	{
+		if (_registrations.TryGetValue(serviceType, out var factory))
+		{
+			var instance = factory();
+			InjectDependencies(instance);
+			return instance;
+		}
+
+		throw new InvalidOperationException($"Service of type {serviceType} is not registered.");
 	}
 }

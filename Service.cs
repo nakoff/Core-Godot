@@ -1,7 +1,6 @@
-
 using System.Collections.Generic;
 
-namespace Core.Services;
+namespace LooksLike.Services;
 
 public interface IInit
 {

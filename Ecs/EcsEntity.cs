@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using Godot;
 
-namespace Core.LLEcs;
+namespace LooksLike.Ecs;
 
 [GlobalClass]
 public partial class EcsEntity : Node

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Godot;
 
-namespace Core.Fsm;
+namespace LooksLike.Fsm;
 
 public class FsmState
 {

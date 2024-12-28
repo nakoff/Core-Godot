@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace Core.LLEcs;
+namespace LooksLike.Ecs;
 
 public interface IEcsSystem
 {

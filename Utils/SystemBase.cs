@@ -1,7 +1,7 @@
 using System.Collections.Generic;
-using Core.DependencyInjection;
+using LooksLike.DependencyInjection;
 
-namespace Core.LLEcs;
+namespace LooksLike.Ecs;
 
 public class SystemBase : EcsSystem
 {

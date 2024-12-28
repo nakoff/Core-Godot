@@ -1,6 +1,6 @@
 using Godot;
 
-namespace Core.LLEcs;
+namespace LooksLike.Ecs;
 
 [GlobalClass]
 public partial class EcsComponent : Node
