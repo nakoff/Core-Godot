@@ -1,14 +1,16 @@
 using System;
 using System.Collections.Generic;
 using LooksLike.DependencyInjection;
-using Godot;
+using LooksLike.Services;
 
-namespace LooksLike.Services;
+namespace LooksLike.Utils;
 
 public class ServiceBase : Service
 {
     protected static DIContainer? Container { get; private set; }
     private static Dictionary<Type, Service> _services = new();
+
+    private Logger _logger = Logger.GetLogger("LooksLike/Utils", "#ff00ff");
 
     public static void Initialize(DIContainer container)
     {
@@ -35,6 +37,6 @@ public class ServiceBase : Service
             return;
         }
 
-        GD.PrintErr($"{typeof(TService)} is not a Service.");
+        _logger.Error($"{typeof(TService)} is not a Service.");
     }
 }

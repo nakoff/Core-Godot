@@ -20,7 +20,7 @@ public partial class EcsEntity : Node
 				_components.Add(item.GetType(), component);
 		}
 
-		EcsWorld.Instance.AddEntity(this);
+		EcsWorld.Instance!.AddEntity(this);
 	}
 
 	public bool HasComponent<T>() where T : Node => _components.ContainsKey(typeof(T));

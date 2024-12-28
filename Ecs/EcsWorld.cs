@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using LooksLike.Utils;
 using Godot;
 
 namespace LooksLike.Ecs;
@@ -22,6 +23,8 @@ public partial class EcsWorld : Node
     private Dictionary<string, List<EcsEntity>> _addedEntities = new();
     private Dictionary<string, List<ulong>> _removedEntities = new();
 
+    private Logger _logger = Logger.GetLogger("LooksLike.Ecs", "#ff00ff");
+
     public override void _EnterTree()
     {
         if (_instance == null)
@@ -34,7 +37,7 @@ public partial class EcsWorld : Node
     {
         if (Instance == null)
         {
-            GD.PrintErr("EcsWorld is null");
+            _logger.Error("EcsWorld is null");
             return;
         }
 

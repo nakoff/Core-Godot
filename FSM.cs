@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Godot;
+using LooksLike.Utils;
 
 namespace LooksLike.Fsm;
 
@@ -60,6 +60,8 @@ public class Fsm
     protected FsmState? curState;
     protected FsmState? prevState;
 
+    private Logger _logger = Logger.GetLogger("LooksLike/Fsm", "#ff00ff");
+
     public Fsm(List<AnonimouseState> states)
     {
         foreach (var state in states)
@@ -91,7 +93,7 @@ public class Fsm
 
         if (_states.FirstOrDefault(s => s.Name == state.Name) != null)
         {
-            GD.PrintErr($"State {state.Name} already is exist");
+            _logger.Error($"State {state.Name} already is exist");
             return;
         }
 
@@ -126,7 +128,7 @@ public class Fsm
         var newState = _states.FirstOrDefault(s => s.Name == name);
         if (newState == null)
         {
-            GD.PrintErr($"State {name} not exist");
+            _logger.Error($"State {name} not exist");
             return;
         }
         ChangeState(newState);
