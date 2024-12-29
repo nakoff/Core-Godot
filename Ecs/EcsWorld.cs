@@ -23,7 +23,9 @@ public partial class EcsWorld : Node
     private Dictionary<string, List<EcsEntity>> _addedEntities = new();
     private Dictionary<string, List<ulong>> _removedEntities = new();
 
-    private Logger _logger = Logger.GetLogger("LooksLike.Ecs", "#ff00ff");
+    private Logger _logger = Logger.GetLogger("LooksLike/Ecs", "#ff00ff");
+
+    private ulong _lastUpdateEntities = 0;
 
     public override void _EnterTree()
     {
@@ -53,8 +55,13 @@ public partial class EcsWorld : Node
 
     public void Tick(float dt)
     {
-        foreach (var f in _filters)
-            UpdateFilteredEntities(f);
+        var currentTime = Time.GetTicksMsec();
+        if (_lastUpdateEntities != currentTime)
+        {
+            _lastUpdateEntities = currentTime;
+            foreach (var f in _filters)
+                UpdateFilteredEntities(f);
+        }
 
         foreach (var system in _allSystems)
         {
@@ -84,6 +91,14 @@ public partial class EcsWorld : Node
 
     public void PhysicsTick(float dt)
     {
+        var currentTime = Time.GetTicksMsec();
+        if (_lastUpdateEntities != currentTime)
+        {
+            _lastUpdateEntities = currentTime;
+            foreach (var f in _filters)
+                UpdateFilteredEntities(f);
+        }
+
         foreach (var system in _allSystems)
         {
             var filteredEntities = _filteredEntities[system.Filter.Id];

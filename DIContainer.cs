@@ -11,18 +11,23 @@ public class DIContainer
 {
 	private readonly Dictionary<Type, Func<object>> _registrations = new();
 
-	public void Register<TService>(Func<TService> implementationFactory) where TService : class
-		=> _registrations[typeof(TService)] = () => implementationFactory();
+	public void Register<T>(Func<T> implementationFactory) where T : class
+		=> _registrations[typeof(T)] = () => implementationFactory();
 
 	public void Register(Type serviceType, Func<object> implementationFactory)
 		=> _registrations[serviceType] = implementationFactory;
 
 	public void InjectDependencies(object target)
 	{
-		if (target == null) throw new ArgumentNullException(nameof(target));
+		if (target == null)
+			throw new ArgumentNullException(nameof(target));
 
 		var targetType = target.GetType();
-		var members = targetType.GetMembers(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+		var members = targetType.GetMembers(
+			BindingFlags.Instance
+			| BindingFlags.Public
+			| BindingFlags.NonPublic
+		);
 
 		foreach (var member in members)
 		{
@@ -49,8 +54,7 @@ public class DIContainer
 		}
 	}
 
-	private TService Resolve<TService>() where TService : class
-		=> (TService)Resolve(typeof(TService));
+	private T Resolve<T>() where T : class => (T)Resolve(typeof(T));
 
 	private object Resolve(Type serviceType)
 	{
