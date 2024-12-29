@@ -7,7 +7,7 @@ public interface IEcsSystem
     public EcsFilter Filter { get; }
 }
 
-public interface IEntityAdded : IEcsSystem
+public interface IEntitiesAdded : IEcsSystem
 {
     void EntitiesAdded(List<EcsEntity> entities);
 }
@@ -22,9 +22,9 @@ public interface IEntitiesPhysicsUpdate : IEcsSystem
     void EntitiesPhysicsUpdate(Dictionary<ulong, EcsEntity> entities, float deltaTime);
 }
 
-public interface IEntityRemoved : IEcsSystem
+public interface IEntitiesRemoved : IEcsSystem
 {
-    void EntitiesRemoved(List<int> ids);
+    void EntitiesRemoved(List<EcsEntity> entities);
 }
 
 public abstract class EcsSystem

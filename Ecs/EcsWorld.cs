@@ -12,8 +12,8 @@ public partial class EcsWorld : Node
 
     private static EcsWorld? _instance;
     private List<EcsSystem> _allSystems = new();
-    private Dictionary<int, IEntityAdded> _initableSystems = new();
-    private Dictionary<int, IEntityRemoved> _removableSystems = new();
+    private Dictionary<int, IEntitiesAdded> _initableSystems = new();
+    private Dictionary<int, IEntitiesRemoved> _removableSystems = new();
     private Dictionary<int, IEntitiesUpdate> _updatableSystems = new();
     private Dictionary<int, IEntitiesPhysicsUpdate> _physicsUpdatableSystems = new();
 
@@ -21,7 +21,7 @@ public partial class EcsWorld : Node
     private List<EcsFilter> _filters = new();
     private Dictionary<string, Dictionary<ulong, EcsEntity>> _filteredEntities = new();
     private Dictionary<string, List<EcsEntity>> _addedEntities = new();
-    private Dictionary<string, List<ulong>> _removedEntities = new();
+    private Dictionary<string, List<EcsEntity>> _removedEntities = new();
 
     private Logger _logger = Logger.GetLogger("LooksLike/Ecs", "#ff00ff");
 
@@ -66,6 +66,15 @@ public partial class EcsWorld : Node
         foreach (var system in _allSystems)
         {
             var filteredEntities = _filteredEntities[system.Filter.Id];
+
+            // removed
+            if (_removableSystems.ContainsKey(system.Id)
+                    && _removedEntities.ContainsKey(system.Filter.Id)
+                    && _removedEntities[system.Filter.Id].Count > 0)
+            {
+                var entities = _removedEntities[system.Filter.Id];
+                _removableSystems[system.Id].EntitiesRemoved(entities);
+            }
 
             // added
             if (_initableSystems.ContainsKey(system.Id)
@@ -160,10 +169,10 @@ public partial class EcsWorld : Node
     {
         var ecsSystem = (EcsSystem)system;
         _allSystems.Add(ecsSystem);
-        if (system is IEntityAdded entityAdded) _initableSystems.Add(ecsSystem.Id, entityAdded);
+        if (system is IEntitiesAdded entityAdded) _initableSystems.Add(ecsSystem.Id, entityAdded);
         if (system is IEntitiesUpdate entitiesUpdate) _updatableSystems.Add(ecsSystem.Id, entitiesUpdate);
         if (system is IEntitiesPhysicsUpdate entitiesPhysicsUpdate) _physicsUpdatableSystems.Add(ecsSystem.Id, entitiesPhysicsUpdate);
-        if (system is IEntityRemoved entitiesRemoved) _removableSystems.Add(ecsSystem.Id, entitiesRemoved);
+        if (system is IEntitiesRemoved entitiesRemoved) _removableSystems.Add(ecsSystem.Id, entitiesRemoved);
     }
 
     public void UnregisterAllSystems()
@@ -213,8 +222,16 @@ public partial class EcsWorld : Node
                 newFilteredEntities.Add(entity.Id, entity);
         }
 
-        foreach (var c in filter.WithoutComponents)
+        // check removed entityIds
+        var prevFilteredEntities = _filteredEntities[filter.Id];
+        foreach (var (id, entity) in prevFilteredEntities)
         {
+            if (!newFilteredEntities.ContainsKey(id))
+            {
+                if (!_removedEntities.ContainsKey(filter.Id))
+                    _removedEntities.Add(filter.Id, new List<EcsEntity>());
+                _removedEntities[filter.Id].Add(entity);
+            }
         }
 
         // check added entityIds

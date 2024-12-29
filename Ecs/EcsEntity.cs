@@ -8,7 +8,7 @@ public partial class EcsEntity : Node
 {
 	public ulong Id => GetInstanceId();
 
-	private Dictionary<System.Type, Node> _components = new();
+	private Dictionary<System.Type, EcsComponent> _components = new();
 
 	public override void _Ready()
 	{
@@ -23,23 +23,18 @@ public partial class EcsEntity : Node
 		EcsWorld.Instance!.AddEntity(this);
 	}
 
-	public bool HasComponent<T>() where T : Node => _components.ContainsKey(typeof(T));
+	public bool HasComponent<T>() where T : EcsComponent => HasComponent(typeof(T));
+	public bool HasComponent(System.Type type) => _components.ContainsKey(type);
 
-	public T? GetComponent<T>() where T : Node
-	{
-		if (HasComponent<T>())
-			return (T)_components[typeof(T)];
-		return null;
-	}
-
-	public Node? GetComponent(System.Type type)
+	public T? GetComponent<T>() where T : EcsComponent => (T?)GetComponent(typeof(T));
+	public EcsComponent? GetComponent(System.Type type)
 	{
 		if (_components.ContainsKey(type))
 			return _components[type];
 		return null;
 	}
 
-	public T AddComponent<T>(T component) where T : Node
+	public T AddComponent<T>(T component) where T : EcsComponent
 	{
 		if (HasComponent<T>())
 			RemoveComponent<T>();
@@ -49,7 +44,7 @@ public partial class EcsEntity : Node
 		return component;
 	}
 
-	public void RemoveComponent<T>() where T : Node
+	public void RemoveComponent<T>() where T : EcsComponent
 	{
 		if (!HasComponent<T>())
 			return;
