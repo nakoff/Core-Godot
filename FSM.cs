@@ -20,11 +20,11 @@ public class FsmState
     }
 }
 
-public class AnonimouseState
+public class AnonymousState
 {
     public FsmState State { get; }
 
-    public AnonimouseState
+    public AnonymousState
     (
         string Name,
         Action? onEntered = null,
@@ -62,7 +62,7 @@ public class Fsm
 
     private Logger _logger = Logger.GetLogger("LooksLike/Fsm", "#ff00ff");
 
-    public Fsm(List<AnonimouseState> states)
+    public Fsm(List<AnonymousState> states)
     {
         foreach (var state in states)
             AddState(state.State);

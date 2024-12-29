@@ -24,7 +24,7 @@ public class Logger
     private Logger(string name, string? color = null)
     {
         _name = name;
-        _color = color ?? "#ffffff";
+        _color = color ?? "#999999";
     }
 
     public static Logger GetLogger(string name, string? color = null)
