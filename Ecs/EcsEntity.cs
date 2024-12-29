@@ -39,15 +39,14 @@ public partial class EcsEntity : Node
 		return null;
 	}
 
-	public T AddComponent<T>() where T : Node, new()
+	public T AddComponent<T>(T component) where T : Node
 	{
 		if (HasComponent<T>())
 			RemoveComponent<T>();
 
-		var c = new T();
-		_components.Add(c.GetType(), c);
-		AddChild(c);
-		return c;
+		_components.Add(component.GetType(), component);
+		AddChild(component);
+		return component;
 	}
 
 	public void RemoveComponent<T>() where T : Node
@@ -63,6 +62,6 @@ public partial class EcsEntity : Node
 	public override void _ExitTree()
 	{
 		base._ExitTree();
-		EcsWorld.Instance.RemoveEntity(this);
+		EcsWorld.Instance!.RemoveEntity(this);
 	}
 }
