@@ -11,11 +11,14 @@ public partial class EcsWorld : Node
 	[Export] private Godot.Collections.Array<EcsEntity> entities = new();
 
 	private static EcsWorld? _instance;
+	private List<IInitSystem> _initableSystems = new();
+	private List<IDestroySystem> _destroyableSystems = new();
+
 	private List<EcsSystem> _allSystems = new();
-	private List<IEntitiesAdded> _initableSystems = new();
-	private List<IComponentsRemoved> _removableSystems = new();
-	private List<IEntitiesUpdate> _updatableSystems = new();
-	private List<IEntitiesPhysicsUpdate> _physicsUpdatableSystems = new();
+	private List<IEntitiesAdded> _entitiesAddedSystems = new();
+	private List<IComponentsRemoved> _entitiesRemoveSystems = new();
+	private List<IEntitiesUpdate> _entitiesUpdateSystems = new();
+	private List<IEntitiesPhysicsUpdate> _entitiesPhysicsUpdateSystems = new();
 
 	private List<EcsEntity> _entities = new();
 	private List<EcsEntity> _removedEntities = new();
@@ -47,6 +50,9 @@ public partial class EcsWorld : Node
 			return;
 		}
 
+		foreach (var system in _initableSystems)
+			system.Init();
+
 		foreach (var system in _allSystems)
 		{
 			if (!_filters.Contains(system.Filter))
@@ -73,7 +79,7 @@ public partial class EcsWorld : Node
 		}
 
 		// removed
-		foreach (var system in _removableSystems)
+		foreach (var system in _entitiesRemoveSystems)
 		{
 			var filterId = system.Filter.Id;
 			if (_removedEntityComponents.ContainsKey(filterId))
@@ -85,7 +91,7 @@ public partial class EcsWorld : Node
 		_removedEntityComponents.Clear();
 
 		// added
-		foreach (var system in _initableSystems)
+		foreach (var system in _entitiesAddedSystems)
 		{
 			var filterId = system.Filter.Id;
 			if (_addedEntities.ContainsKey(filterId) && _addedEntities[filterId].Count > 0)
@@ -97,7 +103,7 @@ public partial class EcsWorld : Node
 		_addedEntities.Clear();
 
 		// update
-		foreach (var system in _updatableSystems)
+		foreach (var system in _entitiesUpdateSystems)
 		{
 			var filterId = system.Filter.Id;
 			if (_filteredEntities[filterId].Count > 0)
@@ -157,7 +163,7 @@ public partial class EcsWorld : Node
 		}
 
 		// physics update
-		foreach (var system in _physicsUpdatableSystems)
+		foreach (var system in _entitiesPhysicsUpdateSystems)
 		{
 			var filterId = system.Filter.Id;
 			if (_filteredEntities.ContainsKey(filterId) && _filteredEntities[filterId].Count > 0)
@@ -225,19 +231,28 @@ public partial class EcsWorld : Node
 	{
 		var ecsSystem = (EcsSystem)system;
 		_allSystems.Add(ecsSystem);
-		if (system is IEntitiesAdded entityAdded) _initableSystems.Add(entityAdded);
-		if (system is IEntitiesUpdate entitiesUpdate) _updatableSystems.Add(entitiesUpdate);
-		if (system is IEntitiesPhysicsUpdate entitiesPhysicsUpdate) _physicsUpdatableSystems.Add(entitiesPhysicsUpdate);
-		if (system is IComponentsRemoved entitiesRemoved) _removableSystems.Add(entitiesRemoved);
+
+		if (system is IInitSystem initSystem) _initableSystems.Add(initSystem);
+		if (system is IDestroySystem destroySystem) _destroyableSystems.Add(destroySystem);
+
+		if (system is IEntitiesAdded entityAdded) _entitiesAddedSystems.Add(entityAdded);
+		if (system is IEntitiesUpdate entitiesUpdate) _entitiesUpdateSystems.Add(entitiesUpdate);
+		if (system is IEntitiesPhysicsUpdate entitiesPhysicsUpdate) _entitiesPhysicsUpdateSystems.Add(entitiesPhysicsUpdate);
+		if (system is IComponentsRemoved entitiesRemoved) _entitiesRemoveSystems.Add(entitiesRemoved);
 	}
 
 	public void UnregisterAllSystems()
 	{
+		foreach (var system in _destroyableSystems)
+			system.Destroy();
+
 		_allSystems.Clear();
-		_updatableSystems.Clear();
-		_physicsUpdatableSystems.Clear();
 		_initableSystems.Clear();
-		_removableSystems.Clear();
+		_destroyableSystems.Clear();
+		_entitiesUpdateSystems.Clear();
+		_entitiesPhysicsUpdateSystems.Clear();
+		_entitiesAddedSystems.Clear();
+		_entitiesRemoveSystems.Clear();
 	}
 
 	private void UpdateFilteredEntities(EcsFilter filter)

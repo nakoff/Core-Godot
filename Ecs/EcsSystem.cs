@@ -7,6 +7,16 @@ public interface IEcsSystem
     public EcsFilter Filter { get; }
 }
 
+public interface IInitSystem : IEcsSystem
+{
+    void Init();
+}
+
+public interface IDestroySystem : IEcsSystem
+{
+    void Destroy();
+}
+
 public interface IEntitiesAdded : IEcsSystem
 {
     void EntitiesAdded(Dictionary<ulong, EcsEntity> entities);
