@@ -6,250 +6,315 @@ namespace LooksLike.Ecs;
 
 public partial class EcsWorld : Node
 {
-    public static EcsWorld? Instance => _instance;
+	public static EcsWorld? Instance => _instance;
 
-    [Export] private Godot.Collections.Array<EcsEntity> entities = new();
+	[Export] private Godot.Collections.Array<EcsEntity> entities = new();
 
-    private static EcsWorld? _instance;
-    private List<EcsSystem> _allSystems = new();
-    private Dictionary<int, IEntitiesAdded> _initableSystems = new();
-    private Dictionary<int, IEntitiesRemoved> _removableSystems = new();
-    private Dictionary<int, IEntitiesUpdate> _updatableSystems = new();
-    private Dictionary<int, IEntitiesPhysicsUpdate> _physicsUpdatableSystems = new();
+	private static EcsWorld? _instance;
+	private List<EcsSystem> _allSystems = new();
+	private List<IEntitiesAdded> _initableSystems = new();
+	private List<IComponentsRemoved> _removableSystems = new();
+	private List<IEntitiesUpdate> _updatableSystems = new();
+	private List<IEntitiesPhysicsUpdate> _physicsUpdatableSystems = new();
 
-    private List<EcsEntity> _entities = new();
-    private List<EcsFilter> _filters = new();
-    private Dictionary<string, Dictionary<ulong, EcsEntity>> _filteredEntities = new();
-    private Dictionary<string, List<EcsEntity>> _addedEntities = new();
-    private Dictionary<string, List<EcsEntity>> _removedEntities = new();
+	private List<EcsEntity> _entities = new();
+	private List<EcsEntity> _removedEntities = new();
+	private List<EcsFilter> _filters = new();
+	private Dictionary<uint, Dictionary<ulong, EcsEntity>> _filteredEntities = new();
+	private Dictionary<uint, Dictionary<ulong, EcsEntity>> _addedEntities = new();
+	private Dictionary<uint, Dictionary<ulong, EcsEntity>> _removedEntityComponents = new();
 
-    private Logger _logger = Logger.GetLogger("LooksLike/Ecs", "#ff00ff");
+	private List<EcsEntity> _allRemovedEntityComponents = new();
+	private List<EcsEntity> _allAddedEntities = new();
 
-    private ulong _lastUpdateEntities = 0;
+	private Logger _logger = Logger.GetLogger("LooksLike/Ecs", "#ff00ff");
 
-    public override void _EnterTree()
-    {
-        if (_instance == null)
-            _instance = this;
-        else
-            QueueFree();
-    }
+	private ulong _lastUpdateEntities = 0;
 
-    public void Initialize()
-    {
-        if (Instance == null)
-        {
-            _logger.Error("EcsWorld is null");
-            return;
-        }
+	public override void _EnterTree()
+	{
+		if (_instance == null)
+			_instance = this;
+		else
+			QueueFree();
+	}
 
-        foreach (var system in _allSystems)
-        {
-            if (_filters.Contains(system.Filter))
-                continue;
+	public void Initialize()
+	{
+		if (Instance == null)
+		{
+			_logger.Error("EcsWorld is null");
+			return;
+		}
 
-            _filters.Add(system.Filter);
-            UpdateFilteredEntities(system.Filter);
-        }
-    }
+		foreach (var system in _allSystems)
+		{
+			if (!_filters.Contains(system.Filter))
+				_filters.Add(system.Filter);
+		}
 
-    public void Tick(float dt)
-    {
-        var currentTime = Time.GetTicksMsec();
-        if (_lastUpdateEntities != currentTime)
-        {
-            _lastUpdateEntities = currentTime;
-            foreach (var f in _filters)
-                UpdateFilteredEntities(f);
-        }
+		foreach (var filter in _filters)
+		{
+			if (!_filteredEntities.ContainsKey(filter.Id))
+				_filteredEntities.Add(filter.Id, new());
 
-        foreach (var system in _allSystems)
-        {
-            var filteredEntities = _filteredEntities[system.Filter.Id];
+			UpdateFilteredEntities(filter);
+		}
+	}
 
-            // removed
-            if (_removableSystems.ContainsKey(system.Id)
-                    && _removedEntities.ContainsKey(system.Filter.Id)
-                    && _removedEntities[system.Filter.Id].Count > 0)
-            {
-                var entities = _removedEntities[system.Filter.Id];
-                _removableSystems[system.Id].EntitiesRemoved(entities);
-            }
+	public void Tick(float dt)
+	{
+		var currentTime = Time.GetTicksMsec();
+		if (_lastUpdateEntities != currentTime)
+		{
+			_lastUpdateEntities = currentTime;
+			foreach (var f in _filters)
+				UpdateFilteredEntities(f);
+		}
 
-            // added
-            if (_initableSystems.ContainsKey(system.Id)
-                    && _addedEntities.ContainsKey(system.Filter.Id)
-                    && _addedEntities[system.Filter.Id].Count > 0)
-            {
-                var entities = _addedEntities[system.Filter.Id];
-                _initableSystems[system.Id].EntitiesAdded(entities);
-            }
+		// removed
+		foreach (var system in _removableSystems)
+		{
+			var filterId = system.Filter.Id;
+			if (_removedEntityComponents.ContainsKey(filterId))
+			{
+				var entities = _removedEntityComponents[filterId];
+				system.ComponentsRemoved(entities);
+			}
+		}
+		_removedEntityComponents.Clear();
 
-            // update
-            if (system is IEntitiesUpdate updateSystem)
-                updateSystem.EntitiesUpdate(filteredEntities, dt);
+		// added
+		foreach (var system in _initableSystems)
+		{
+			var filterId = system.Filter.Id;
+			if (_addedEntities.ContainsKey(filterId) && _addedEntities[filterId].Count > 0)
+			{
+				var entities = _addedEntities[filterId];
+				system.EntitiesAdded(entities);
+			}
+		}
+		_addedEntities.Clear();
 
-            // physics update
-            if (system is IEntitiesPhysicsUpdate physicsUpdateSystem)
-                physicsUpdateSystem.EntitiesPhysicsUpdate(filteredEntities, dt);
-        }
+		// update
+		foreach (var system in _updatableSystems)
+		{
+			var filterId = system.Filter.Id;
+			if (_filteredEntities[filterId].Count > 0)
+				system.EntitiesUpdate(_filteredEntities[filterId], dt);
+		}
 
-        _addedEntities.Clear();
-        _removedEntities.Clear();
-    }
+		// clear
+		if (_allRemovedEntityComponents.Count > 0)
+		{
+			foreach (var entity in _allRemovedEntityComponents)
+			{
+				foreach (var component in entity.RemovedComponents.Values)
+					component.QueueFree();
 
-    public void PhysicsTick(float dt)
-    {
-        var currentTime = Time.GetTicksMsec();
-        if (_lastUpdateEntities != currentTime)
-        {
-            _lastUpdateEntities = currentTime;
-            foreach (var f in _filters)
-                UpdateFilteredEntities(f);
-        }
+				entity.RemovedComponents.Clear();
+			}
+			_allRemovedEntityComponents.Clear();
+		}
 
-        foreach (var system in _allSystems)
-        {
-            var filteredEntities = _filteredEntities[system.Filter.Id];
+		if (_allAddedEntities.Count > 0)
+		{
+			foreach (var entity in _allAddedEntities)
+				entity.AddedComponents.Clear();
+			_allAddedEntities.Clear();
+		}
 
-            // physics update
-            if (system is IEntitiesPhysicsUpdate physicsUpdateSystem)
-                physicsUpdateSystem.EntitiesPhysicsUpdate(filteredEntities, dt);
-        }
-    }
+		if (_removedEntities.Count > 0)
+		{
+			List<EcsEntity> lateRemove = new();
+			foreach (var entity in _removedEntities)
+			{
+				if (entity.Components.Count > 0)
+				{
+					lateRemove.Add(entity);
+					foreach (var component in entity.Components)
+						entity.RemoveComponent(component);
+				}
+				else
+				{
+					_entities.Remove(entity);
+					entities.Remove(entity);
+					entity.QueueFree();
+				}
+			}
+			_removedEntities = lateRemove;
+		}
+	}
 
-    public EcsEntity CreateEntity(string name, Node? parent = null)
-    {
-        var p = parent != null ? parent : GetTree().Root.GetChild(0);
-        var entity = new EcsEntity();
-        entity.Name = name;
-        p.AddChild(entity);
+	public void PhysicsTick(float dt)
+	{
+		var currentTime = Time.GetTicksMsec();
+		if (_lastUpdateEntities != currentTime)
+		{
+			_lastUpdateEntities = currentTime;
+			foreach (var f in _filters)
+				UpdateFilteredEntities(f);
+		}
 
-        return entity;
-    }
+		// physics update
+		foreach (var system in _physicsUpdatableSystems)
+		{
+			var filterId = system.Filter.Id;
+			if (_filteredEntities.ContainsKey(filterId) && _filteredEntities[filterId].Count > 0)
+				system.EntitiesPhysicsUpdate(_filteredEntities[filterId], dt);
+		}
+	}
 
-    public EcsEntity AddEntity(EcsEntity entity)
-    {
-        _entities.Add(entity);
-        entities.Add(entity);
-        return entity;
-    }
+	public EcsEntity CreateEntity(string name, Node? parent = null)
+	{
+		var p = parent != null ? parent : GetTree().Root.GetChild(0);
+		var entity = new EcsEntity();
+		entity.Name = name;
+		p.AddChild(entity);
 
-    public void RemoveEntity(EcsEntity entity)
-    {
-        _entities.Remove(entity);
-        entities.Remove(entity);
-        entity.QueueFree();
-    }
+		return entity;
+	}
 
-    public Dictionary<ulong, EcsEntity> GetFilteredEntities(EcsFilter filter)
-    {
-        var math = false;
-        foreach (var c in filter.WithComponents)
-        {
-            foreach (var f in _filters)
-            {
-                if (!f.WithComponents.Contains(c) || f.WithoutComponents.Contains(c))
-                {
-                    math = false;
-                    break;
-                }
+	public EcsEntity AddEntity(EcsEntity entity)
+	{
+		_entities.Add(entity);
+		entities.Add(entity);
+		return entity;
+	}
 
-                math = true;
-            }
-        }
+	public void RemoveEntity(EcsEntity entity)
+	{
+		if (!_entities.Contains(entity) || entity.MarkToRemove)
+			return;
 
-        if (!math)
-            UpdateFilteredEntities(filter);
+		// entity.MarkToRemove = true;
+		ReflectionHelper.SetReadonlyField(entity, "MarkToRemove", true);
+		entity.ProcessMode = ProcessModeEnum.Disabled;
 
-        return _filteredEntities[filter.Id];
-    }
+		if (!_removedEntities.Contains(entity))
+			_removedEntities.Add(entity);
+	}
 
-    public void RegisterSystem(IEcsSystem system)
-    {
-        var ecsSystem = (EcsSystem)system;
-        _allSystems.Add(ecsSystem);
-        if (system is IEntitiesAdded entityAdded) _initableSystems.Add(ecsSystem.Id, entityAdded);
-        if (system is IEntitiesUpdate entitiesUpdate) _updatableSystems.Add(ecsSystem.Id, entitiesUpdate);
-        if (system is IEntitiesPhysicsUpdate entitiesPhysicsUpdate) _physicsUpdatableSystems.Add(ecsSystem.Id, entitiesPhysicsUpdate);
-        if (system is IEntitiesRemoved entitiesRemoved) _removableSystems.Add(ecsSystem.Id, entitiesRemoved);
-    }
+	public Dictionary<ulong, EcsEntity> GetFilteredEntities(EcsFilter filter)
+	{
+		if (!_filteredEntities.ContainsKey(filter.Id))
+			_filteredEntities.Add(filter.Id, new());
 
-    public void UnregisterAllSystems()
-    {
-        _allSystems.Clear();
-        _updatableSystems.Clear();
-        _physicsUpdatableSystems.Clear();
-        _initableSystems.Clear();
-        _removableSystems.Clear();
-    }
+		var math = false;
+		foreach (var c in filter.WithComponents)
+		{
+			foreach (var f in _filters)
+			{
+				if (!f.WithComponents.Contains(c) || f.WithoutComponents.Contains(c))
+				{
+					math = false;
+					break;
+				}
 
-    private void UpdateFilteredEntities(EcsFilter filter)
-    {
-        if (!_filteredEntities.ContainsKey(filter.Id))
-            _filteredEntities.Add(filter.Id, new());
+				math = true;
+			}
+		}
 
-        Dictionary<ulong, EcsEntity> newFilteredEntities = new();
-        foreach (var entity in _entities)
-        {
-            var match = false;
-            foreach (var c in filter.WithComponents)
-            {
-                match = false;
+		if (!math)
+			UpdateFilteredEntities(filter);
 
-                if (newFilteredEntities.ContainsKey(entity.Id))
-                    break;
+		return _filteredEntities[filter.Id];
+	}
 
-                if (entity.GetComponent(c) == null)
-                    break;
+	public void RegisterSystem(IEcsSystem system)
+	{
+		var ecsSystem = (EcsSystem)system;
+		_allSystems.Add(ecsSystem);
+		if (system is IEntitiesAdded entityAdded) _initableSystems.Add(entityAdded);
+		if (system is IEntitiesUpdate entitiesUpdate) _updatableSystems.Add(entitiesUpdate);
+		if (system is IEntitiesPhysicsUpdate entitiesPhysicsUpdate) _physicsUpdatableSystems.Add(entitiesPhysicsUpdate);
+		if (system is IComponentsRemoved entitiesRemoved) _removableSystems.Add(entitiesRemoved);
+	}
 
-                match = true;
-            }
+	public void UnregisterAllSystems()
+	{
+		_allSystems.Clear();
+		_updatableSystems.Clear();
+		_physicsUpdatableSystems.Clear();
+		_initableSystems.Clear();
+		_removableSystems.Clear();
+	}
 
-            if (match)
-            {
-                foreach (var c in filter.WithoutComponents)
-                {
-                    if (entity.GetComponent(c) != null)
-                    {
-                        match = false;
-                        break;
-                    }
-                }
-            }
+	private void UpdateFilteredEntities(EcsFilter filter)
+	{
+		_filteredEntities[filter.Id].Clear();
+		foreach (var entity in _entities)
+		{
+			bool? match = null;
+			var matchRemoved = false;
+			var matchAdded = false;
 
-            if (match)
-                newFilteredEntities.Add(entity.Id, entity);
-        }
+			foreach (var componentType in filter.WithComponents)
+			{
+				var hasComponent = entity.HasComponent(componentType);
+				if (match == null || match == true)
+					match = hasComponent;
 
-        // check removed entityIds
-        var prevFilteredEntities = _filteredEntities[filter.Id];
-        foreach (var (id, entity) in prevFilteredEntities)
-        {
-            if (!newFilteredEntities.ContainsKey(id))
-            {
-                if (!_removedEntities.ContainsKey(filter.Id))
-                    _removedEntities.Add(filter.Id, new List<EcsEntity>());
-                _removedEntities[filter.Id].Add(entity);
-            }
-        }
+				if (entity.AddedComponents.Count > 0 && !matchAdded)
+					matchAdded = entity.AddedComponents.ContainsKey(componentType);
 
-        // check added entityIds
-        List<EcsEntity> addedEntities = new();
-        var oldFilteredEntities = _filteredEntities[filter.Id];
-        foreach (var (id, entity) in newFilteredEntities)
-        {
-            if (!oldFilteredEntities.ContainsKey(id))
-                addedEntities.Add(entity);
-        }
+				if (match == false && !hasComponent && entity.RemovedComponents.Count > 0)
+					matchRemoved = entity.RemovedComponents.ContainsKey(componentType);
 
-        if (addedEntities.Count > 0)
-        {
-            if (!_addedEntities.ContainsKey(filter.Id))
-                _addedEntities.Add(filter.Id, new List<EcsEntity>());
-            _addedEntities[filter.Id] = addedEntities;
-        }
+				if (match == false && matchRemoved == false)
+					break;
+			}
 
-        _filteredEntities[filter.Id] = newFilteredEntities;
-    }
+			if (match == true || matchRemoved == true)
+			{
+				foreach (var componentType in filter.WithoutComponents)
+				{
+					if (match == true && entity.HasComponent(componentType))
+					{
+						match = false;
+						matchRemoved = false;
+					}
+
+					if (matchRemoved == true)
+						matchRemoved = !entity.RemovedComponents.ContainsKey(componentType);
+
+					if (match == false && matchRemoved == false)
+						break;
+				}
+			}
+
+			if (match == true)
+			{
+				if (!_filteredEntities[filter.Id].ContainsKey(entity.Id))
+					_filteredEntities[filter.Id].Add(entity.Id, entity);
+
+				// check added
+				if (matchAdded)
+				{
+					if (!_addedEntities.ContainsKey(filter.Id))
+						_addedEntities.Add(filter.Id, new());
+
+					if (!_addedEntities[filter.Id].ContainsKey(entity.Id))
+						_addedEntities[filter.Id].Add(entity.Id, entity);
+				}
+			}
+
+			// check removed
+			if (matchRemoved)
+			{
+				if (!_removedEntityComponents.ContainsKey(filter.Id))
+					_removedEntityComponents.Add(filter.Id, new());
+
+				// new list from dict values
+				if (!_removedEntityComponents[filter.Id].ContainsKey(entity.Id))
+					_removedEntityComponents[filter.Id].Add(entity.Id, entity);
+			}
+
+			if (entity.RemovedComponents.Count > 0)
+				_allRemovedEntityComponents.Add(entity);
+
+			if (entity.AddedComponents.Count > 0)
+				_allAddedEntities.Add(entity);
+		}
+	}
 }

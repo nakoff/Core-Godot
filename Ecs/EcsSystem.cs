@@ -9,7 +9,7 @@ public interface IEcsSystem
 
 public interface IEntitiesAdded : IEcsSystem
 {
-    void EntitiesAdded(List<EcsEntity> entities);
+    void EntitiesAdded(Dictionary<ulong, EcsEntity> entities);
 }
 
 public interface IEntitiesUpdate : IEcsSystem
@@ -22,9 +22,9 @@ public interface IEntitiesPhysicsUpdate : IEcsSystem
     void EntitiesPhysicsUpdate(Dictionary<ulong, EcsEntity> entities, float deltaTime);
 }
 
-public interface IEntitiesRemoved : IEcsSystem
+public interface IComponentsRemoved : IEcsSystem
 {
-    void EntitiesRemoved(List<EcsEntity> entities);
+    void ComponentsRemoved(Dictionary<ulong, EcsEntity> entities);
 }
 
 public abstract class EcsSystem

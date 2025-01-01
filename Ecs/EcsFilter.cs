@@ -1,27 +1,27 @@
 using System.Collections.Generic;
-using System;
-using Godot;
 
 namespace LooksLike.Ecs;
 
 public class EcsFilter
 {
-    public readonly string Id;
+    private static uint _idIncremented = 0;
+
+    public readonly uint Id;
     public readonly HashSet<System.Type> WithComponents = new();
     public readonly HashSet<System.Type> WithoutComponents = new();
 
     public EcsFilter()
     {
-        Id = Guid.NewGuid().ToString();
+        Id = ++_idIncremented;
     }
 
-    public EcsFilter With<T>() where T : Node
+    public EcsFilter With<T>() where T : EcsComponent
     {
         WithComponents.Add(typeof(T));
         return this;
     }
 
-    public EcsFilter Without<T>() where T : Node
+    public EcsFilter Without<T>() where T : EcsComponent
     {
         WithoutComponents.Add(typeof(T));
         return this;
