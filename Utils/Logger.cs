@@ -100,10 +100,9 @@ public class Logger
                 return $"{string.Join(" ", message)}";
             case LogType.Debug:
                 StackTrace stackTrace = new StackTrace(true);
-                StackFrame? frame = stackTrace.GetFrame(1);
+                StackFrame? frame = stackTrace.GetFrame(3);
                 string fileName = frame?.GetFileName() ?? "";
                 int lineNumber = frame?.GetFileLineNumber() ?? 0;
-
                 return $"[color=#999999]DEBUG[{Path.GetFileName(fileName)}:{lineNumber}]: {string.Join(" ", message)}[/color]";
             case LogType.Error:
                 return $"[color=#ff0000]ERROR: {string.Join(" ", message)}[/color]";
