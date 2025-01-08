@@ -5,7 +5,7 @@ using Godot;
 namespace LooksLike.Framework.Components;
 
 [GlobalClass]
-public partial class HitDetectComponent : EcsComponent
+public partial class HitShapeDetectComponent : EcsComponent
 {
     [Export] public ShapeCast3D? Node;
     [Export] public int HitsToRemove = 1;

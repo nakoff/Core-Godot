@@ -7,14 +7,14 @@ using LooksLike.Framework.Components;
 
 namespace LooksLike.Framework.Systems;
 
-public class HitDetectSystem : SystemBase, IEntitiesAdded, IEntitiesPhysicsUpdate
+public class HitShapeDetectSystem : SystemBase, IEntitiesAdded, IEntitiesPhysicsUpdate
 {
     [Inject] private EcsWorld? _world;
 
-    public HitDetectSystem() : base(new EcsFilter()
+    public HitShapeDetectSystem() : base(new EcsFilter()
         .With<MoveComponent>()
         .With<Transform3DComponent>()
-        .With<HitDetectComponent>())
+        .With<HitShapeDetectComponent>())
     {
     }
 
@@ -22,7 +22,7 @@ public class HitDetectSystem : SystemBase, IEntitiesAdded, IEntitiesPhysicsUpdat
     {
         foreach (var (_, entity) in entities)
         {
-            var collisionDetect = entity.GetComponent<HitDetectComponent>()!;
+            var collisionDetect = entity.GetComponent<HitShapeDetectComponent>()!;
             collisionDetect.Node!.Enabled = true;
         }
     }
@@ -33,7 +33,7 @@ public class HitDetectSystem : SystemBase, IEntitiesAdded, IEntitiesPhysicsUpdat
         {
             var move = entity.GetComponent<MoveComponent>()!;
             var currentPosition = entity.GetComponent<Transform3DComponent>()!.Transform3D.Origin;
-            var collisionDetect = entity.GetComponent<HitDetectComponent>()!;
+            var collisionDetect = entity.GetComponent<HitShapeDetectComponent>()!;
 
             var prevPosition = move.PrevPosition;
             var node = collisionDetect.Node!;
