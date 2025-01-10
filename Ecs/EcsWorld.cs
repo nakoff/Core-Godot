@@ -4,6 +4,7 @@ using Godot;
 
 namespace LooksLike.Ecs;
 
+[GlobalClass]
 public partial class EcsWorld : Node
 {
 	public static EcsWorld? Instance => _instance;

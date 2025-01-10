@@ -13,7 +13,7 @@ public class RaycastService : ServiceBase, IRaycastService
 		_root = root;
 	}
 
-	public CollisionObject3D? Raycast(Vector3 from, Vector3 to)
+	public RaycastResult? Raycast(Vector3 from, Vector3 to)
 	{
 		var query = new PhysicsRayQueryParameters3D
 		{
@@ -27,9 +27,12 @@ public class RaycastService : ServiceBase, IRaycastService
 		if (result.Count == 0)
 			return null;
 
-		if (result.ContainsKey("collider"))
-			return result["collider"].As<CollisionObject3D>();
+		return new RaycastResult
+		{
+			Collider = result.ContainsKey("collider") ? result["collider"].As<CollisionObject3D>() : null,
+			Position = result.ContainsKey("position") ? result["position"].As<Vector3>() : Vector3.Zero,
+			Normal = result.ContainsKey("normal") ? result["normal"].As<Vector3>() : Vector3.Zero,
+		};
 
-		return null;
 	}
 }
