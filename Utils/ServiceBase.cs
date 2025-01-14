@@ -25,6 +25,9 @@ public class ServiceBase : Service
             container.Register(type, () => value);
         }
 
+        foreach (var service in _services)
+            container.InjectDependencies(service.Value);
+
         Service.Initialize();
     }
 
