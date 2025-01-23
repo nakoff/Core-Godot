@@ -51,7 +51,9 @@ public partial class EcsEntity : Node
 		ReflectionHelper.SetReadonlyField(component, "Entity", this);
 
 		_components.Add(type, component);
-		AddedComponents.Add(type, component);
+
+		if (!AddedComponents.ContainsKey(type))
+			AddedComponents.Add(type, component);
 
 		if (attach)
 			AddChild(component);
@@ -64,6 +66,7 @@ public partial class EcsEntity : Node
 	public void RemoveComponent(System.Type type)
 	{
 		var component = GetComponent(type);
+		AddedComponents.Remove(type);
 		if (component == null)
 			return;
 
