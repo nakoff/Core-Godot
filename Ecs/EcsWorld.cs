@@ -23,6 +23,7 @@ public partial class EcsWorld : Node
 
 	private List<EcsEntity> _entities = new();
 	private List<EcsEntity> _removedEntities = new();
+	private List<EcsEntity> _lateRemovedEntities = new();
 	private List<EcsFilter> _filters = new();
 	private Dictionary<uint, Dictionary<ulong, EcsEntity>> _filteredEntities = new();
 	private Dictionary<uint, Dictionary<ulong, EcsEntity>> _addedEntities = new();
@@ -131,14 +132,24 @@ public partial class EcsWorld : Node
 			_allAddedEntities.Clear();
 		}
 
+		if (_lateRemovedEntities.Count > 0)
+		{
+			foreach (var entity in _lateRemovedEntities)
+			{
+				_entities.Remove(entity);
+				entities.Remove(entity);
+				entity.QueueFree();
+			}
+			_lateRemovedEntities.Clear();
+		}
+
 		if (_removedEntities.Count > 0)
 		{
-			List<EcsEntity> lateRemove = new();
 			foreach (var entity in _removedEntities)
 			{
 				if (entity.Components.Count > 0)
 				{
-					lateRemove.Add(entity);
+					_lateRemovedEntities.Add(entity);
 					foreach (var component in entity.Components)
 						entity.RemoveComponent(component);
 				}
@@ -149,7 +160,7 @@ public partial class EcsWorld : Node
 					entity.QueueFree();
 				}
 			}
-			_removedEntities = lateRemove;
+			_removedEntities.Clear();
 		}
 	}
 
