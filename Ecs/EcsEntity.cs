@@ -70,7 +70,9 @@ public partial class EcsEntity : Node
 		if (component == null)
 			return;
 
-		RemovedComponents.Add(type, component);
+		if (!RemovedComponents.ContainsKey(type))
+			RemovedComponents.Add(type, component);
+
 		_components.Remove(type);
 
 		// _components[type].QueueFree(); // will be removed by EcsWorld
