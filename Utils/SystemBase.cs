@@ -21,4 +21,10 @@ public class SystemBase : EcsSystem
     {
         _systems.Add(this);
     }
+
+    public static void UnInitialize()
+    {
+        Container = null;
+        _systems.Clear();
+    }
 }

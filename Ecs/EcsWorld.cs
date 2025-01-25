@@ -207,7 +207,7 @@ public partial class EcsWorld : Node
 
 		// entity.MarkToRemove = true;
 		ReflectionHelper.SetReadonlyField(entity, "MarkToRemove", true);
-		entity.ProcessMode = ProcessModeEnum.Disabled;
+		// entity.ProcessMode = ProcessModeEnum.Disabled;
 
 		if (!_removedEntities.Contains(entity))
 			_removedEntities.Add(entity);
@@ -265,6 +265,20 @@ public partial class EcsWorld : Node
 		_entitiesPhysicsUpdateSystems.Clear();
 		_entitiesAddedSystems.Clear();
 		_entitiesRemoveSystems.Clear();
+	}
+
+	public void UnInitialize()
+	{
+		_entities.Clear();
+		entities.Clear();
+		UnregisterAllSystems();
+
+		_filters.Clear();
+		_filteredEntities.Clear();
+
+		_allAddedEntities.Clear();
+		_lateRemovedEntities.Clear();
+		_removedEntities.Clear();
 	}
 
 	private void UpdateFilteredEntities(EcsFilter filter)

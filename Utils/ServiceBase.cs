@@ -42,4 +42,11 @@ public class ServiceBase : Service
 
         _logger.Error($"{typeof(TService)} is not a Service.");
     }
+
+    public static new void UnInitialize()
+    {
+        Container = null;
+        Service.UnInitialize();
+        _services.Clear();
+    }
 }
